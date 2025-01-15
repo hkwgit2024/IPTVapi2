@@ -1,0 +1,143 @@
+name: Ipv4-txt Auto Update
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 1,9 * * *'
+  push:
+    paths-ignore:
+      - .github
+      - .gitignore
+      - LICENSE
+      - logo.png
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  Update:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-20.04
+            branch: bach
+            owner: hkwgit2024
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check Repository Owner
+        id: check_owner
+        run: |
+          if [ "${{ github.repository_owner }}" != "${{ matrix.owner }}" ]; then
+            echo "Repository owner is not ${{ matrix.owner }}. Cancelling the job."
+            exit 1
+          fi
+
+      - name: GetTime
+        run: echo "DATE=$(date +'%Y-%m-%d %H:%M:%S CST' | sed 's/ CST$//')" >> $GITHUB_ENV
+
+      - name: Update Files
+        run: |
+          rm -f ipv4.txt && wget https://raw.githubusercontent.com/Guovin/iptv-api/refs/heads/gd/output/result.txt -O ipv4.txt
+
+          # 央视源
+          cat ipv4.txt > CCTV.txt
+          sed -i -n '/📺央视频道/,+1p' CCTV.txt
+          sed -i 's/📺央视频道/📺央视频道1/' CCTV.txt
+          sed -i '/^\s*$/d' CCTV.txt
+          
+          # 卫视源、地方频道、数字频道、港澳台
+          cat ipv4.txt > CNTV1.txt && sed -i -n '/📡卫视频道/,+1p' CNTV1.txt
+          sed -i 's/📡卫视频道/📡卫视频道1/' CNTV1.txt
+          cat ipv4.txt > CNTV2.txt && sed -i -n '/☘️湖北频道/,+1p' CNTV2.txt
+          sed -i 's/☘️湖北频道/☘️湖北本地1/' CNTV2.txt
+          cat ipv4.txt > CNTV3.txt && sed -i -n '/🏀体育频道/,+1p' CNTV3.txt
+          sed -i 's/🏀体育频道/🏀体育频道1/' CNTV3.txt
+          cat ipv4.txt > CNTV4.txt && sed -i -n '/🎬电影频道/,+1p' CNTV4.txt
+          sed -i 's/🎬电影频道/🎬电影频道1/' CNTV4.txt
+          rm -f tsds.txt && wget https://raw.githubusercontent.com/kimwang1978/collect-tv-txt/refs/heads/main/merged_output.txt -O tsds.txt
+          cat tsds.txt > CNTV5.txt && sed -i -n '/电影频道/,+1p' CNTV5.txt
+          sed -i 's/电影频道/🎬电影频道2/' CNTV5.txt
+          cat tsds.txt > CNTV6.txt && sed -i -n '/💓专享央视/,+1p' CNTV6.txt
+          sed -i 's/💓专享央视/📺央视频道2/' CNTV6.txt
+          cat tsds.txt > CNTV7.txt && sed -i -n '/戏曲频道/,+1p' CNTV7.txt
+          sed -i 's/戏曲频道/💃戏曲频道1/' CNTV7.txt
+          cat tsds.txt > CNTV8.txt && sed -i -n '/💓专享源🅱️/,+1p' CNTV8.txt
+          sed -i 's/💓专享源🅱️/🎬电影频道3/' CNTV8.txt
+          cat tsds.txt > CNTV9.txt && sed -i -n '/💓儿童专享/,+1p' CNTV9.txt
+          sed -i 's/💓儿童专享/👶儿童频道1/' CNTV9.txt
+          cat tsds.txt > CNTV10.txt && sed -i -n '/🌐央视频道/,+1p' CNTV10.txt
+          sed -i 's/🌐央视频道/📺央视频道3/' CNTV10.txt
+          cat tsds.txt > CNTV11.txt && sed -i -n '/☘️湖北频道/,+1p' CNTV11.txt
+          sed -i 's/☘️湖北频道/☘️湖北本地2/' CNTV11.txt
+          cat tsds.txt > CNTV12.txt && sed -i -n '/春晚/,+1p' CNTV12.txt
+          sed -i 's/春晚/📀春晚频道1/' CNTV12.txt
+          cat CNTV1.txt >> CNTV.txt
+          cat CNTV2.txt >> CNTV.txt
+          cat CNTV3.txt >> CNTV.txt
+          cat CNTV4.txt >> CNTV.txt
+          cat CNTV5.txt >> CNTV.txt
+          cat CNTV6.txt >> CNTV.txt
+          cat CNTV7.txt >> CNTV.txt
+          cat CNTV8.txt >> CNTV.txt
+          cat CNTV9.txt >> CNTV.txt
+          cat CNTV10.txt >> CNTV.txt
+          cat CNTV11.txt >> CNTV.txt
+          cat CNTV12.txt >> CNTV.txt
+          echo "" >> CNTV.txt
+          rm -f CNTV1.txt CNTV2.txt CNTV3.txt CNTV4.txt CNTV5.txt CNTV6.txt CNTV7.txt CNTV8.txt CNTV9.txt CNTV10.txt CNTV11.txt CNTV12.txt ipv4.txt zbds.txt tsds.txt
+          sed -i '/^\s*$/d' CNTV.txt
+          
+          # 整合源
+          cat CCTV.txt > iptv4.txt
+          cat CNTV.txt >> iptv4.txt
+          sed -i '/#EXTM3U/d' iptv4.txt
+          sed -i '1i #EXTM3U x-tvg-url="https://live.kilvn.com/epg.xml.gz,https://e.erw.cc/all.xml.gz,http://epg.51zmt.top:8000/e.xml.gz" catchup="append" catchup-source="?playseek=${(b)yyyyMMddHHmmss}-${(e)yyyyMMddHHmmss}"' iptv4.txt
+          sed -i 's|"https://raw.githubusercontent.com|"https://github.moeyy.xyz/https://raw.githubusercontent.com|g' iptv4.txt
+          sed -i '/^\s*$/d' iptv4.txt
+
+          # 大人源
+          rm -f Adult.txt && wget https://fanmingming.com/txt?url=http://adultiptv.net/chs.m3u -O Adult.txt
+          sed -i -n '/XXX/,+1p' Adult.txt
+          sed -i 's/XXX/福利频道_6868/' Adult.txt
+          sed -i 's/AdultIPTV.net //g' Adult.txt
+          sed -i '/^\s*$/d' Adult.txt
+          
+          cat iptv4.txt > iptv4+.txt
+          cat Adult.txt >> iptv4+.txt
+          sed -i '/^\s*$/d' iptv4+.txt
+          
+          rm -f CCTV.txt CNTV.txt Adult.txt
+
+          # FM源
+          rm -f radio.txt && wget https://raw.githubusercontent.com/huangsuming/iptv/main/list/radio.txt -O radio.txt
+          
+          # 节目源
+          rm -f epg.xml && wget https://epg.112114.xyz/pp.xml -O epg.xml
+
+          sed -i 's/中国教育1台/CETV-1/g' epg.xml
+          sed -i 's/中国教育2台/CETV-2/g' epg.xml
+          sed -i 's/中国教育3台/CETV-3/g' epg.xml
+          sed -i 's/中国教育4台/CETV-4/g' epg.xml
+          sed -i '/<channel id="中国教育一套">/,/<\/channel>/d; /<programme channel="中国教育一套".*>/,/<\/programme>/d' epg.xml
+          
+          rm -f epg.xml.gz && gzip -k epg.xml
+          
+          # README
+          sed -i "s/已于 [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\} [0-9]\{2\}:[0-9]\{2\}:[0-9]\{2\} 自动更新/已于 ${DATE} 自动更新/g" README.md
+
+      - name: Commit
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git checkout --orphan latest_branch
+          git add -A
+          git commit -am "${DATE} 更新."
+          git branch -D ${{ matrix.branch }}
+          git branch -m ${{ matrix.branch }}
+
+      - name: Push
+        run: git push -f origin ${{ matrix.branch }}
